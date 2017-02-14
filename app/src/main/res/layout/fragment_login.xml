@@ -12,6 +12,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/fieldLogin"
             android:inputType="text"
+            android:ems="10"
             android:hint="Login" />
         <EditText
             android:layout_width="wrap_content"
@@ -19,6 +20,7 @@
             android:id="@+id/fieldPassword"
             android:layout_below="@id/fieldLogin"
             android:inputType="textPassword"
+            android:ems="10"
             android:hint="Password" />
         <Button
             android:layout_width="wrap_content"

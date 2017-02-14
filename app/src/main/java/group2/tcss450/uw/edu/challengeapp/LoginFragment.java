@@ -2,6 +2,7 @@ package group2.tcss450.uw.edu.challengeapp;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -9,6 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 
 /**
@@ -22,11 +30,13 @@ public class LoginFragment extends Fragment implements View.OnClickListener{
     public static final String LOGIN = "loginKey";
     public static final String PASSWORD = "loginPassword";
 
+    private static final String PARTIAL_URL
+            = "http://cssgate.insttech.washington.edu/" +
+            "~jamesh21/login.php?";
+    private String mUsername;
+    private String mPassword;
     private OnFragmentInteractionListener mListener;
     private View testView;
-    public LoginFragment() {
-        // Required empty public constructor
-    }
 
 
     @Override
@@ -43,11 +53,21 @@ public class LoginFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         if (mListener != null) {
             EditText editText = (EditText) testView.findViewById(R.id.fieldLogin);
-            String userName = editText.getText().toString();
+            mUsername = editText.getText().toString();
             editText = (EditText) testView.findViewById(R.id.fieldPassword);
-            String password = editText.getText().toString();
-            mListener.onFragmentInteraction(R.id.submitLogin, userName, password);
+            mPassword = editText.getText().toString();
+            AsyncTask<String, Void, String> task = new GetWebServiceTask();
+            task.execute(PARTIAL_URL, mUsername, mPassword);
+
         }
+    }
+
+    private boolean checker(String result) {
+        if (result.startsWith("Correct")) {
+            System.out.println("In checker");
+            return true;
+        }
+        return false;
     }
 
 //    // TODO: Rename method, update argument and hook method into UI event
@@ -87,5 +107,52 @@ public class LoginFragment extends Fragment implements View.OnClickListener{
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(int buttonId, String userName, String password);
+    }
+
+
+
+    private class GetWebServiceTask extends AsyncTask<String, Void, String> {
+        //private final String SERVICE = "_get.php";
+        @Override
+        protected String doInBackground(String... strings) {
+            if (strings.length != 3) {
+                throw new IllegalArgumentException("Two String arguments required.");
+            }
+            String response = "";
+            HttpURLConnection urlConnection = null;
+            String url = strings[0];
+            String args = "username=" + strings[1] + "&password=" + strings[2];
+            try {
+                URL urlObject = new URL(url + args);
+                System.out.println("this is the url" + urlObject.toString());
+                urlConnection = (HttpURLConnection) urlObject.openConnection();
+                InputStream content = urlConnection.getInputStream();
+                BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                String s = "";
+                while ((s = buffer.readLine()) != null) {
+                    response += s;
+                }
+            } catch (Exception e) {
+                response = "Unable to connect, Reason: "
+                        + e.getMessage();
+            } finally {
+                if (urlConnection != null)
+                    urlConnection.disconnect();
+            }
+            return response;
+        }
+        @Override
+        protected void onPostExecute(String result) {
+            // Something wrong with the network or the URL.
+            if (result.startsWith("Unable to")) {
+               // Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG)
+                 //       .show();
+                return;
+            }
+            if (checker(result)) {
+                System.out.println("onFragment NExt");
+                mListener.onFragmentInteraction(R.id.submitLogin, mUsername, mPassword);
+            }
+        }
     }
 }
